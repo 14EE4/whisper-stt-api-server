@@ -1,5 +1,16 @@
-# 오디오 테스트 파일들
-audio_samples/
+# 오디오 테스트 파일들 (README.md는 포함)
+audio_samples/*.mp3
+audio_samples/*.wav
+audio_samples/*.m4a
+audio_samples/*.flac
+audio_samples/*.ogg
+audio_samples/*.wma
+audio_samples/*.MP3
+audio_samples/*.WAV
+audio_samples/*.M4A
+audio_samples/*.FLAC
+audio_samples/*.OGG
+audio_samples/*.WMA
 
 # Python
 __pycache__/
