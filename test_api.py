@@ -1,15 +1,17 @@
 import requests
 import json
+import os
+import glob
 
 def test_transcribe_api():
     """
     Whisper STT API 테스트 함수
-    실제 오디오 파일을 업로드하여 테스트하려면 파일 경로를 수정하세요.
+    audio_samples 폴더의 오디오 파일들을 자동으로 찾아서 테스트합니다.
     """
     url = "http://localhost:5000/transcribe"
     
-    # 테스트용 오디오 파일 경로
-    audio_file_path = "녹음 (7).m4a"  # 폴더에 있는 실제 오디오 파일
+    # 오디오 파일 폴더
+    audio_folder = "audio_samples"
     
     print("Whisper STT API 테스트")
     print("="*50)
@@ -34,38 +36,61 @@ def test_transcribe_api():
     print("\n실제 오디오 파일 테스트:")
     print("="*30)
     
-    # 오디오 파일이 존재하는지 확인
-    import os
-    if not os.path.exists(audio_file_path):
-        print(f"✗ 오디오 파일을 찾을 수 없습니다: {audio_file_path}")
+    # audio_samples 폴더 확인
+    if not os.path.exists(audio_folder):
+        print(f"✗ 오디오 폴더를 찾을 수 없습니다: {audio_folder}")
+        print("  폴더를 생성하고 오디오 파일을 추가하세요.")
         return
     
-    print(f"✓ 오디오 파일 발견: {audio_file_path}")
+    # 지원되는 오디오 파일 확장자
+    audio_extensions = ['*.mp3', '*.wav', '*.m4a', '*.flac', '*.ogg', '*.wma']
+    audio_files = []
     
-    # 실제 오디오 파일로 테스트
-    try:
-        with open(audio_file_path, 'rb') as f:
-            files = {'audio': f}
-            print("음성 인식 중... (시간이 걸릴 수 있습니다)")
-            response = requests.post(url, files=files)
-            print(f"✓ 상태 코드: {response.status_code}")
-            if response.status_code == 200:
-                result = response.json()
-                print(f"✓ 인식된 텍스트: {result['text']}")
-            else:
-                print(f"✗ 오류 응답:")
-                print(f"   응답 텍스트: {response.text}")
-                try:
-                    error_json = response.json()
-                    print(f"   JSON 오류: {error_json}")
-                except:
-                    print(f"   JSON 파싱 실패")
-    except Exception as e:
-        print(f"✗ 파일 업로드 실패: {e}")
+    for ext in audio_extensions:
+        audio_files.extend(glob.glob(os.path.join(audio_folder, ext)))
+        audio_files.extend(glob.glob(os.path.join(audio_folder, ext.upper())))
     
-    print("\n추가 테스트를 위해 다른 오디오 파일을 사용하려면:")
-    print("1. 오디오 파일을 이 폴더에 복사하세요")
-    print("2. audio_file_path 변수를 수정하세요")
+    if not audio_files:
+        print(f"✗ {audio_folder} 폴더에 오디오 파일이 없습니다.")
+        print("  지원 형식: mp3, wav, m4a, flac, ogg, wma")
+        return
+    
+    print(f"✓ {len(audio_files)}개의 오디오 파일을 발견했습니다:")
+    for i, file_path in enumerate(audio_files, 1):
+        filename = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path) / (1024 * 1024)  # MB
+        print(f"  {i}. {filename} ({file_size:.2f} MB)")
+    
+    # 각 파일에 대해 테스트 수행
+    for i, audio_file_path in enumerate(audio_files, 1):
+        filename = os.path.basename(audio_file_path)
+        print(f"\n[{i}/{len(audio_files)}] 테스트 중: {filename}")
+        print("-" * 40)
+        
+        try:
+            with open(audio_file_path, 'rb') as f:
+                files = {'audio': f}
+                print("음성 인식 중... (시간이 걸릴 수 있습니다)")
+                response = requests.post(url, files=files)
+                print(f"✓ 상태 코드: {response.status_code}")
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✓ 인식된 텍스트: {result['text']}")
+                else:
+                    print(f"✗ 오류 응답:")
+                    print(f"   응답 텍스트: {response.text}")
+                    try:
+                        error_json = response.json()
+                        print(f"   JSON 오류: {error_json}")
+                    except:
+                        print(f"   JSON 파싱 실패")
+        except Exception as e:
+            print(f"✗ 파일 업로드 실패: {e}")
+    
+    print(f"\n테스트 완료! 총 {len(audio_files)}개 파일 처리됨")
+    print("\n새로운 오디오 파일 추가 방법:")
+    print(f"1. {audio_folder} 폴더에 오디오 파일을 복사하세요")
+    print("2. 이 스크립트를 다시 실행하면 자동으로 감지됩니다")
 
 if __name__ == "__main__":
     test_transcribe_api()
